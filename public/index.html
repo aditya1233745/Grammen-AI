@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grameen AI — 12 AI helpers for village life</title>
+<meta name="description" content="Twelve AI agents that answer real questions about prices, credit, health, schemes and more — in Hindi, Marathi, or English, styled like the chat app you already use.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F3EDDD;
+    --cream-deep: #E9E0C9;
+    --indigo: #22314F;
+    --indigo-deep: #182238;
+    --turmeric: #D9A02E;
+    --brick: #A6491F;
+    --paddy: #3F5B3A;
+    --ink: #2A2015;
+    --ink-soft: #574B37;
+    --line: rgba(42,32,21,0.14);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Mukta', sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  h1, h2, h3, .headline {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    color: var(--indigo);
+    margin: 0;
+    line-height: 1.08;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: var(--indigo); text-decoration: none; }
+  .brand .mark { font-size: 24px; }
+  .nav-links { display: flex; align-items: center; gap: 28px; font-size: 15px; }
+  .nav-links a { text-decoration: none; color: var(--ink-soft); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--indigo); color: var(--cream);
+    padding: 12px 22px; border-radius: 3px; text-decoration: none;
+    font-size: 15px; font-weight: 600;
+    border: 1px solid var(--indigo);
+  }
+  .btn:hover { background: var(--indigo-deep); }
+  .btn-outline {
+    background: transparent; color: var(--indigo); border: 1px solid var(--indigo);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px;
+    align-items: center; padding: 56px 0 88px;
+  }
+  .hero h1 { font-size: 52px; letter-spacing: -0.01em; }
+  .hero .sub {
+    margin-top: 22px; font-size: 19px; color: var(--ink-soft); max-width: 46ch;
+  }
+  .hero .cta-row { margin-top: 34px; display: flex; gap: 16px; align-items: center; }
+  .hero .cta-note { font-size: 14px; color: var(--ink-soft); }
+
+  /* Phone mock with a real WhatsApp-style exchange */
+  .phone {
+    background: var(--indigo-deep);
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: 0 28px 60px -20px rgba(24,34,56,0.45);
+    transform: rotate(1.4deg);
+    justify-self: end;
+    width: 100%; max-width: 340px;
+  }
+  .phone-screen {
+    background: #EFE7DC;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .phone-header {
+    background: var(--indigo); color: var(--cream);
+    padding: 14px 16px; font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .phone-header .dot { width: 8px; height: 8px; border-radius: 50%; background: #6FBF73; }
+  .phone-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; min-height: 300px; }
+  .bubble { max-width: 84%; padding: 9px 12px; border-radius: 8px; font-size: 14px; line-height: 1.45; }
+  .bubble.user { align-self: flex-end; background: #DCF3D2; border-bottom-right-radius: 2px; }
+  .bubble.agent { align-self: flex-start; background: #FFFFFF; border-bottom-left-radius: 2px; box-shadow: 0 1px 1px rgba(0,0,0,0.06); }
+  .bubble.price-card { background: #FFFFFF; padding: 12px 14px; border-bottom-left-radius: 2px; box-shadow: 0 1px 1px rgba(0,0,0,0.06); }
+  .bubble .name-row { display: flex; align-items: center; gap: 8px; }
+  .bubble.price-card .name-row .icon { font-size: 17px; }
+  .bubble.price-card .name-row .name { font-weight: 700; font-size: 13.5px; flex: 1; }
+  .bubble.price-card .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 13px; }
+  .bubble.price-card .val { font-weight: 700; }
+  .bubble.price-card .pill { font-size: 11px; font-weight: 700; color: var(--paddy); background: #E3F1DE; padding: 2px 8px; border-radius: 10px; }
+
+  /* ---------- Problem framing ---------- */
+  .frame {
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 52px 0; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 48px;
+  }
+  .frame h2 { font-size: 30px; max-width: 14ch; }
+  .frame p { color: var(--ink-soft); font-size: 17px; max-width: 58ch; }
+  .frame p + p { margin-top: 14px; }
+
+  /* ---------- Agent directory ---------- */
+  .directory { padding: 72px 0; }
+  .directory > .heading { max-width: 60ch; margin-bottom: 44px; }
+  .directory h2 { font-size: 32px; }
+  .directory .heading p { color: var(--ink-soft); margin-top: 12px; font-size: 17px; }
+
+  .cluster { margin-bottom: 40px; }
+  .cluster-label {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px;
+    color: var(--indigo); margin-bottom: 16px;
+  }
+  .cluster-label .swatch { width: 10px; height: 10px; border-radius: 50%; }
+  .cluster-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .agent-card {
+    background: var(--cream-deep);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent, var(--indigo));
+    border-radius: 4px;
+    padding: 18px 18px 16px;
+  }
+  .agent-card .top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .agent-card .icon { font-size: 22px; }
+  .agent-card .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; color: var(--indigo); }
+  .agent-card .tagline { font-size: 14.5px; color: var(--ink-soft); line-height: 1.5; }
+
+  /* ---------- How it works ---------- */
+  .how { padding: 60px 0 76px; border-top: 1px solid var(--line); }
+  .how h2 { font-size: 30px; margin-bottom: 36px; }
+  .how-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .how-step .num { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600; color: var(--turmeric); }
+  .how-step h3 { font-size: 18px; margin-top: 8px; }
+  .how-step p { color: var(--ink-soft); font-size: 15px; margin-top: 6px; }
+
+  /* ---------- Honesty ---------- */
+  .honesty {
+    background: var(--indigo); color: var(--cream);
+    border-radius: 6px; padding: 40px 44px; margin: 12px 0 76px;
+  }
+  .honesty h2 { color: var(--cream); font-size: 26px; }
+  .honesty p { color: #C9D0DD; font-size: 16px; max-width: 68ch; margin-top: 14px; }
+  .honesty ul { margin: 18px 0 0; padding-left: 20px; color: #C9D0DD; font-size: 15px; }
+  .honesty li + li { margin-top: 8px; }
+  .honesty .credit { margin-top: 24px; font-size: 13.5px; color: #93A0B8; }
+
+  /* ---------- Final CTA ---------- */
+  .final-cta { text-align: center; padding: 20px 0 90px; }
+  .final-cta h2 { font-size: 34px; }
+  .final-cta p { color: var(--ink-soft); margin-top: 12px; font-size: 17px; }
+  .final-cta .btn { margin-top: 26px; padding: 15px 30px; font-size: 16px; }
+
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; font-size: 13.5px; color: var(--ink-soft); }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; }
+    .phone { justify-self: start; margin-top: 8px; transform: none; }
+    .frame { grid-template-columns: 1fr; }
+    .cluster-grid { grid-template-columns: 1fr; }
+    .how-steps { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 38px; }
+    .nav-links .hide-mobile { display: none; }
+    .honesty { padding: 28px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#top"><span class="mark">🌾</span> Grameen AI</a>
+    <div class="nav-links">
+      <a href="#agents" class="hide-mobile">The 12 agents</a>
+      <a href="#how" class="hide-mobile">How it works</a>
+      <a class="btn" href="/app.html">Open the app</a>
+    </div>
+  </nav>
+</div>
+
+<div class="wrap" id="top">
+  <section class="hero">
+    <div>
+      <h1>One habit for a hundred village errands.</h1>
+      <p class="sub">Twelve AI helpers — prices, credit, schemes, health, weather, and more — that answer in Hindi, Marathi, or English, right inside a chat you already know how to use.</p>
+      <div class="cta-row">
+        <a class="btn" href="/app.html">Open the app</a>
+        <a class="btn btn-outline" href="#agents">See what it can do</a>
+      </div>
+      <p class="cta-note">Built on live SerpApi search for the SerpApi India Hackathon 2026.</p>
+    </div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-header"><span class="dot"></span> Mandi Mitra AI</div>
+        <div class="phone-body">
+          <div class="bubble user">Nashik mein pyaaz ka bhav kya hai?</div>
+          <div class="bubble price-card">
+            <div class="name-row"><span class="icon">🧺</span><span class="name">Onion</span><span class="pill">▲ 12.4% this week</span></div>
+            <div class="row"><span>Nashik (Lasalgaon APMC)</span><span class="val">₹2,450</span></div>
+            <div class="row"><span>Bangalore</span><span class="val">₹2,800</span></div>
+          </div>
+          <div class="bubble agent">Prices are rising on tight supply. Waiting a few days before selling could work in your favour.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="frame">
+    <h2>Village life runs on a dozen disconnected systems.</h2>
+    <div>
+      <p>A fair mandi price. A working loan scheme. A nearby clinic. A weather call before sowing. Each one lives on a different form, office, or website — most not built for someone checking from a phone, in their own language, between other work.</p>
+      <p>Grameen AI puts twelve focused helpers behind one familiar chat window, each one searching live data and answering plainly — not a single do-everything bot pretending to know things it doesn't.</p>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="agents">
+  <section class="directory">
+    <div class="heading">
+      <h2>Twelve helpers, four kinds of everyday need.</h2>
+      <p>Every agent calls real SerpApi search data and stays honest about what it can't find — no invented numbers, no guessed eligibility.</p>
+    </div>
+
+    <div class="cluster">
+      <div class="cluster-label"><span class="swatch" style="background:var(--paddy)"></span>Buy &amp; sell</div>
+      <div class="cluster-grid">
+        <div class="agent-card" style="--accent:var(--paddy)">
+          <div class="top"><span class="icon">🌾</span><span class="name">Mandi Mitra AI</span></div>
+          <p class="tagline">Fair mandi prices and demand trends for what you grow.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--paddy)">
+          <div class="top"><span class="icon">🏷️</span><span class="name">Bazar Nazar</span></div>
+          <p class="tagline">What competitors charge for what you sell online.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--paddy)">
+          <div class="top"><span class="icon">🌱</span><span class="name">Krishi Sahayak</span></div>
+          <p class="tagline">Nearby seeds and fertilizer, and what they cost.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <div class="cluster-label"><span class="swatch" style="background:var(--turmeric)"></span>Money &amp; growth</div>
+      <div class="cluster-grid">
+        <div class="agent-card" style="--accent:var(--turmeric)">
+          <div class="top"><span class="icon">💰</span><span class="name">Rin Sahayak</span></div>
+          <p class="tagline">MSME loans, Mudra, and Kisan Credit Card info.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--turmeric)">
+          <div class="top"><span class="icon">🏛️</span><span class="name">Sarkari Sahayak</span></div>
+          <p class="tagline">Government schemes and subsidies, sourced live.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--turmeric)">
+          <div class="top"><span class="icon">💡</span><span class="name">Patent Sahayak</span></div>
+          <p class="tagline">Checks if your product idea already exists.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <div class="cluster-label"><span class="swatch" style="background:var(--brick)"></span>Move &amp; work</div>
+      <div class="cluster-grid">
+        <div class="agent-card" style="--accent:var(--brick)">
+          <div class="top"><span class="icon">💼</span><span class="name">Rozgar Sahayak</span></div>
+          <p class="tagline">Nearby jobs and daily-wage work.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--brick)">
+          <div class="top"><span class="icon">🚚</span><span class="name">Karnataka Mandi Logistics</span></div>
+          <p class="tagline">Transport businesses for moving produce.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--brick)">
+          <div class="top"><span class="icon">🚌</span><span class="name">Yatra Sahayak</span></div>
+          <p class="tagline">Affordable flights and stays for travel.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cluster">
+      <div class="cluster-label"><span class="swatch" style="background:var(--indigo)"></span>Life &amp; learning</div>
+      <div class="cluster-grid">
+        <div class="agent-card" style="--accent:var(--indigo)">
+          <div class="top"><span class="icon">🏥</span><span class="name">Swasthya Sahayak</span></div>
+          <p class="tagline">Nearest hospitals, clinics, and pharmacies.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--indigo)">
+          <div class="top"><span class="icon">📚</span><span class="name">Shiksha Sahayak</span></div>
+          <p class="tagline">Scholarships, exam dates, and admissions.</p>
+        </div>
+        <div class="agent-card" style="--accent:var(--indigo)">
+          <div class="top"><span class="icon">🌦️</span><span class="name">Mausam Sahayak</span></div>
+          <p class="tagline">Weather calls for sowing, spraying, and travel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="how">
+  <section class="how">
+    <h2>How it works</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="num">1</div>
+        <h3>Pick a helper</h3>
+        <p>Choose the agent for what you need — price, credit, health, or one of the other nine.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">2</div>
+        <h3>Ask in your own words</h3>
+        <p>Hindi, Marathi, or English — type or speak, the way you'd message a person.</p>
+      </div>
+      <div class="how-step">
+        <div class="num">3</div>
+        <h3>Get a grounded answer</h3>
+        <p>Each reply comes from a live search, not a guess — with a plain reason attached.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="honesty">
+    <h2>Where this is still honest about its limits</h2>
+    <p>A few agents lean on data that isn't perfectly suited to the job — we'd rather say so than let the app oversell itself:</p>
+    <ul>
+      <li><strong>Karnataka Mandi Logistics</strong> can only find transport businesses, not confirm real-time truck availability or pricing.</li>
+      <li><strong>Yatra Sahayak</strong> searches flights and hotels only — no bus or train data.</li>
+      <li><strong>Mausam Sahayak</strong> uses Google's weather data, not a dedicated meteorological service — check IMD for storm warnings.</li>
+      <li><strong>Swasthya Sahayak</strong> finds healthcare facilities; it never diagnoses or advises on treatment.</li>
+      <li><strong>Patent Sahayak</strong> is informational only, never a substitute for a registered patent attorney.</li>
+    </ul>
+    <p class="credit">Built for the SerpApi India Hackathon 2026, powered by the SerpApi MCP server.</p>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="final-cta">
+    <h2>Twelve helpers. One chat window.</h2>
+    <p>Create an account and try the one closest to today's problem.</p>
+    <a class="btn" href="/app.html">Open the app</a>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">© 2026 Grameen AI. Built for the SerpApi India Hackathon.</div>
+</footer>
+
+</body>
+</html>

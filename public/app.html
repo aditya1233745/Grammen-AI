@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grameen AI</title>
+<style>
+  :root {
+    --wa-header: #075E54;
+    --wa-teal: #128C7E;
+    --wa-accent: #25D366;
+    --wa-bg: #EFE7DC;
+    --wa-sidebar-bg: #FFFFFF;
+    --wa-hover: #F5F5F5;
+    --wa-active: #F0F2F5;
+    --wa-bubble-out: #DCF8C6;
+    --wa-bubble-in: #FFFFFF;
+    --wa-text: #111B21;
+    --wa-text-secondary: #667781;
+    --wa-border: #E9EDEF;
+    --wa-up: #1D9E75;
+    --wa-down: #C0453A;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--wa-bg);
+    color: var(--wa-text);
+  }
+
+  /* ---------- Auth screen ---------- */
+  #authScreen {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--wa-header), var(--wa-teal));
+  }
+  .auth-card {
+    background: white;
+    border-radius: 12px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .auth-card h1 { margin: 0 0 4px; font-size: 20px; color: var(--wa-header); display:flex; align-items:center; gap:8px; }
+  .auth-card p.sub { margin: 0 0 20px; font-size: 13px; color: var(--wa-text-secondary); }
+  .auth-card label { font-size: 12px; color: var(--wa-text-secondary); display: block; margin: 12px 0 4px; }
+  .auth-card input {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--wa-border);
+    font-size: 14px; outline: none;
+  }
+  .auth-card input:focus { border-color: var(--wa-accent); }
+  .auth-card button.submit {
+    width: 100%; margin-top: 18px; background: var(--wa-accent); color: white; border: none;
+    padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .auth-card button.submit:disabled { opacity: 0.6; }
+  .auth-card .switch { text-align: center; margin-top: 14px; font-size: 13px; color: var(--wa-text-secondary); }
+  .auth-card .switch a { color: var(--wa-header); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .auth-error { background: #FBEAE8; color: var(--wa-down); font-size: 12.5px; padding: 8px 10px; border-radius: 6px; margin-top: 12px; display: none; }
+  .auth-error.show { display: block; }
+
+  /* ---------- App shell ---------- */
+  #app {
+    display: none;
+    height: 100vh;
+    width: 100vw;
+  }
+  .app-inner { display: flex; height: 100%; width: 100%; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--wa-border);
+    background: var(--wa-sidebar-bg);
+    position: relative;
+  }
+  .sidebar-brand {
+    background: var(--wa-header);
+    color: white;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-brand .logo { font-size: 18px; }
+  .sidebar-brand .brand-name { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; }
+  .sidebar-header {
+    background: #F0F2F5;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header .who { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; min-width: 0; }
+  .sidebar-header .who span.name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .avatar.ramesh { background: #6B7C85; }
+  .menu-btn { cursor: pointer; font-size: 16px; opacity: 0.6; padding: 4px; }
+  .menu-dropdown {
+    position: absolute; top: 48px; right: 12px; background: white; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: none; z-index: 20; overflow: hidden;
+  }
+  .menu-dropdown.show { display: block; }
+  .menu-dropdown div { padding: 10px 18px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .menu-dropdown div:hover { background: var(--wa-hover); }
+  .search-box { padding: 8px 12px; }
+  .search-box input {
+    width: 100%; border: none; background: #F0F2F5; border-radius: 20px;
+    padding: 8px 14px; font-size: 13px; outline: none;
+  }
+  .chat-list { flex: 1; overflow-y: auto; }
+  .chat-item {
+    display: flex; gap: 10px; padding: 10px 14px; cursor: pointer;
+    border-bottom: 1px solid #F5F5F5;
+  }
+  .chat-item:hover { background: var(--wa-hover); }
+  .chat-item.active { background: var(--wa-active); }
+  .chat-item .avatar { font-size: 17px; }
+  .chat-item .meta { flex: 1; min-width: 0; }
+  .chat-item .row1 { display: flex; justify-content: space-between; align-items: center; }
+  .chat-item .name { font-size: 14px; font-weight: 600; }
+  .chat-item .preview { font-size: 12px; color: var(--wa-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Main chat ---------- */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-header {
+    background: var(--wa-header);
+    color: white;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chat-header .avatar { background: white; }
+  .chat-header .title { font-size: 15px; font-weight: 600; }
+  .chat-header .status { font-size: 12px; opacity: 0.85; }
+  .chat-header .icons { margin-left: auto; font-size: 16px; opacity: 0.85; display: flex; gap: 18px; }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 40px;
+    background: var(--wa-bg);
+    background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bubble {
+    max-width: 70%; padding: 10px 14px; border-radius: 8px; font-size: 14px;
+    line-height: 1.5; white-space: pre-wrap; box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+  }
+  .bubble .ts { display: block; font-size: 10px; color: var(--wa-text-secondary); text-align: right; margin-top: 4px; }
+  .bubble.user { align-self: flex-end; background: var(--wa-bubble-out); border-bottom-right-radius: 2px; }
+  .bubble.assistant-intro { align-self: flex-start; background: var(--wa-bubble-in); border-bottom-left-radius: 2px; }
+  .bubble.assistant-intro .who { font-size: 13px; font-weight: 700; color: var(--wa-header); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+  .bubble.assistant-intro .who .verified { color: var(--wa-accent); }
+  .bubble.plain { align-self: flex-start; background: var(--wa-bubble-in); border-bottom-left-radius: 2px; }
+
+  /* ---------- Generic result card (reused by all agents) ---------- */
+  .result-card {
+    align-self: flex-start; max-width: 78%; background: white; border-radius: 8px;
+    border-bottom-left-radius: 2px; padding: 14px 16px; box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+  }
+  .result-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .result-card .head .icon { font-size: 22px; }
+  .result-card .head .name { font-size: 15px; font-weight: 700; flex: 1; }
+  .result-card .pill { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 12px; display: flex; align-items: center; gap: 3px; }
+  .result-card .pill.up { background: #E3F6EE; color: var(--wa-up); }
+  .result-card .pill.down { background: #FBEAE8; color: var(--wa-down); }
+  .result-card .pill.flat { background: #EEE; color: #666; }
+  .result-card .items { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .result-card .item { flex: 1; min-width: 150px; background: #FAFAF8; border: 1px solid var(--wa-border); border-radius: 8px; padding: 8px 10px; }
+  .result-card .item .item-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .result-card .item .item-value { font-size: 15px; font-weight: 700; }
+  .result-card .item .item-note { font-size: 10.5px; color: var(--wa-text-secondary); margin-top: 3px; }
+  .result-card .insight { font-size: 12.5px; background: #F5F8F6; border-left: 3px solid var(--wa-accent); padding: 8px 10px; border-radius: 4px; margin-bottom: 10px; color: #33403A; }
+  .result-card .insight b { color: var(--wa-header); }
+  .result-card .answer-line { font-size: 14px; margin-bottom: 10px; }
+  .result-card .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .result-card .action-btn { font-size: 12px; border: 1px solid var(--wa-border); background: white; border-radius: 16px; padding: 6px 12px; cursor: pointer; color: var(--wa-header); }
+  .result-card .action-btn:hover { background: var(--wa-hover); }
+  .result-card .sparkline-wrap { margin-top: 10px; display: none; }
+  .result-card .sparkline-wrap.open { display: block; }
+  .result-card .ts { text-align: right; }
+
+  .tools { align-self: flex-start; font-size: 10px; color: #999; padding: 0 4px; }
+  .followups { display: flex; gap: 8px; overflow-x: auto; padding: 6px 40px 2px; background: var(--wa-bg); }
+  .followup-chip { flex-shrink: 0; background: white; border: 1px solid var(--wa-border); border-radius: 16px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; color: var(--wa-header); }
+  .followup-chip:hover { background: var(--wa-hover); }
+  .disclaimer { text-align: center; font-size: 11px; color: var(--wa-text-secondary); padding: 6px 20px; background: #F0F2F5; border-top: 1px solid var(--wa-border); }
+
+  .input-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #F0F2F5; }
+  .input-bar .icon-btn { font-size: 20px; cursor: pointer; opacity: 0.7; }
+  .input-bar .icon-btn.recording { opacity: 1; color: var(--wa-down); }
+  .input-bar input { flex: 1; border: none; border-radius: 20px; padding: 11px 16px; font-size: 14px; outline: none; }
+  .input-bar .send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--wa-accent); color: white; border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .input-bar .send-btn:disabled { opacity: 0.5; }
+
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 18px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.25s; pointer-events: none; z-index: 50; }
+  .toast.show { opacity: 0.95; }
+  .loading { align-self: flex-start; font-size: 12.5px; color: #888; padding: 0 4px; }
+
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .messages { padding: 14px 12px; }
+    .followups { padding: 6px 12px 2px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <h1>🌾 Grameen AI</h1>
+    <p class="sub" id="authSub">Log in to your account</p>
+    <form id="authForm">
+      <div id="nameField" style="display:none;">
+        <label>Name</label>
+        <input id="authName" type="text" placeholder="Ramesh Patel" />
+      </div>
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="you@example.com" required />
+      <label>Password</label>
+      <input id="authPassword" type="password" placeholder="••••••••" required />
+      <button type="submit" class="submit" id="authSubmit">Log in</button>
+      <div class="auth-error" id="authError"></div>
+    </form>
+    <div class="switch" id="authSwitch">New here? <a id="authToggle">Create an account</a></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="app-inner">
+    <div class="sidebar">
+      <div class="sidebar-brand"><span class="logo">🌾</span><span class="brand-name">Grameen AI</span></div>
+      <div class="sidebar-header">
+        <div class="who">
+          <div class="avatar ramesh" id="userAvatar">?</div>
+          <span class="name" id="userName">—</span>
+        </div>
+        <div style="position:relative;">
+          <div class="menu-btn" id="menuBtn">⋮</div>
+          <div class="menu-dropdown" id="menuDropdown"><div id="logoutBtn">Logout</div></div>
+        </div>
+      </div>
+      <div class="search-box"><input placeholder="Search or start new chat" /></div>
+      <div class="chat-list" id="chatList"></div>
+    </div>
+
+    <div class="main">
+      <div class="chat-header">
+        <div class="avatar" id="headerAvatar">🌾</div>
+        <div>
+          <div class="title" id="headerTitle">Grameen AI</div>
+          <div class="status" id="headerStatus">● Online</div>
+        </div>
+        <div class="icons"><span>🔍</span><span>⚙️</span><span>⋮</span></div>
+      </div>
+
+      <div class="messages" id="chat"></div>
+
+      <div class="followups" id="followups" style="display:none;"></div>
+      <div class="disclaimer">🔒 Prices and info fetched live via SerpApi search engines — built for the SerpApi India Hackathon 2026, not a government data feed.</div>
+
+      <form class="input-bar" id="form">
+        <span class="icon-btn">😊</span>
+        <input id="input" type="text" placeholder="Type your question..." autocomplete="off" />
+        <span class="icon-btn" id="micBtn">🎤</span>
+        <button type="submit" class="send-btn" id="send">➤</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---------- State ----------
+  let currentUser = null;
+  let agentsById = {};
+  let agentOrder = [];
+  let currentAgentId = null;
+
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+  const followupsEl = document.getElementById('followups');
+  const toastEl = document.getElementById('toast');
+  const micBtn = document.getElementById('micBtn');
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+  function nowTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  function initials(name) {
+    return (name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  // ---------- Auth screen ----------
+  const authScreen = document.getElementById('authScreen');
+  const appEl = document.getElementById('app');
+  const authForm = document.getElementById('authForm');
+  const authError = document.getElementById('authError');
+  const authToggle = document.getElementById('authToggle');
+  const authSwitch = document.getElementById('authSwitch');
+  const authSub = document.getElementById('authSub');
+  const authSubmit = document.getElementById('authSubmit');
+  const nameField = document.getElementById('nameField');
+  let authMode = 'login';
+
+  authToggle.addEventListener('click', () => {
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    if (authMode === 'signup') {
+      authSub.textContent = 'Create your account';
+      authSubmit.textContent = 'Sign up';
+      nameField.style.display = 'block';
+      authSwitch.innerHTML = 'Already have an account? <a id="authToggle2">Log in</a>';
+      document.getElementById('authToggle2').addEventListener('click', () => authToggle.click());
+    } else {
+      authSub.textContent = 'Log in to your account';
+      authSubmit.textContent = 'Log in';
+      nameField.style.display = 'none';
+      authSwitch.innerHTML = "New here? <a id='authToggle2'>Create an account</a>";
+      document.getElementById('authToggle2').addEventListener('click', () => authToggle.click());
+    }
+    authError.classList.remove('show');
+  });
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.classList.remove('show');
+    authSubmit.disabled = true;
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const name = document.getElementById('authName').value;
+
+    try {
+      const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+      const body = authMode === 'signup' ? { name, email, password } : { email, password };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        authError.textContent = data.error || 'Something went wrong.';
+        authError.classList.add('show');
+        return;
+      }
+      currentUser = data;
+      await boot();
+    } catch (err) {
+      authError.textContent = 'Network error. Is the server running?';
+      authError.classList.add('show');
+    } finally {
+      authSubmit.disabled = false;
+    }
+  });
+
+  // ---------- Sidebar / agent menu ----------
+  const menuBtn = document.getElementById('menuBtn');
+  const menuDropdown = document.getElementById('menuDropdown');
+  menuBtn.addEventListener('click', () => menuDropdown.classList.toggle('show'));
+  document.addEventListener('click', (e) => {
+    if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) menuDropdown.classList.remove('show');
+  });
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    currentUser = null;
+    appEl.style.display = 'none';
+    authScreen.style.display = 'flex';
+  });
+
+  function renderSidebar() {
+    const listEl = document.getElementById('chatList');
+    listEl.innerHTML = '';
+    agentOrder.forEach((id) => {
+      const agent = agentsById[id];
+      const item = document.createElement('div');
+      item.className = 'chat-item' + (id === currentAgentId ? ' active' : '');
+      item.innerHTML = `
+        <div class="avatar" style="background:${agent.color};">${agent.icon}</div>
+        <div class="meta">
+          <div class="row1"><span class="name">${agent.name}</span></div>
+          <div class="preview">${agent.tagline}</div>
+        </div>`;
+      item.addEventListener('click', () => switchAgent(id));
+      listEl.appendChild(item);
+    });
+  }
+
+  function updateHeader() {
+    const agent = agentsById[currentAgentId];
+    document.getElementById('headerAvatar').textContent = agent.icon;
+    document.getElementById('headerAvatar').style.background = 'white';
+    document.getElementById('headerTitle').textContent = agent.name;
+    document.getElementById('headerStatus').textContent = '● Online — ' + agent.tagline;
+  }
+
+  async function switchAgent(id) {
+    currentAgentId = id;
+    renderSidebar();
+    updateHeader();
+    chat.innerHTML = '';
+    await loadHistory();
+  }
+
+  // ---------- Rendering chat content ----------
+  function addUserBubble(text) {
+    const div = document.createElement('div');
+    div.className = 'bubble user';
+    div.textContent = text;
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = nowTime();
+    div.appendChild(ts);
+    chat.appendChild(div);
+  }
+
+  function addPlainBubble(text) {
+    const div = document.createElement('div');
+    div.className = 'bubble plain';
+    div.textContent = text;
+    const ts = document.createElement('span');
+    ts.className = 'ts';
+    ts.textContent = nowTime();
+    div.appendChild(ts);
+    chat.appendChild(div);
+  }
+
+  function sparklineSvg(series) {
+    const width = 260, height = 54, padX = 4, padY = 6;
+    const values = series.map(p => p.value);
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = max - min || 1;
+    const points = values.map((v, i) => {
+      const x = padX + (i / (values.length - 1)) * (width - padX * 2);
+      const y = height - padY - ((v - min) / range) * (height - padY * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const up = values[values.length - 1] >= values[0];
+    const color = up ? 'var(--wa-up)' : 'var(--wa-down)';
+    return `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+      <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#999;">
+      <span>${series[0].label || 'earlier'}</span><span>${series[series.length-1].label || 'now'}</span>
+    </div>`;
+  }
+
+  // ONE generic card renderer, reused by all 4 agents — each agent's system
+  // prompt fills the same {topic, tag, results, insight} shape with
+  // domain-appropriate content (see agents.js on the server).
+  function addResultCard(card, answer, followUps, trendSeries) {
+    const agent = agentsById[currentAgentId];
+    const div = document.createElement('div');
+    div.className = 'result-card';
+
+    const dir = card.changeDirection === 'up' ? 'up' : card.changeDirection === 'down' ? 'down' : 'flat';
+    const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '—';
+
+    let html = '';
+    if (card.topic) {
+      html += `<div class="head">
+        <span class="icon">${agent.icon}</span>
+        <span class="name">${card.topic}</span>
+        ${card.changePercent != null ? `<span class="pill ${dir}">${arrow} ${Math.abs(card.changePercent)}% ${card.tag || ''}</span>` : (card.tag ? `<span class="pill flat">${card.tag}</span>` : '')}
+      </div>`;
+    }
+
+    html += `<div class="answer-line">${answer}</div>`;
+
+    if (card.results && card.results.length > 0) {
+      html += '<div class="items">';
+      card.results.forEach(r => {
+        html += `<div class="item">
+          <div class="item-name">${r.name || ''}</div>
+          ${r.valueLabel ? `<div class="item-value">${r.valueLabel}</div>` : ''}
+          ${r.note ? `<div class="item-note">${r.note}</div>` : ''}
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    if (card.insight) {
+      html += `<div class="insight"><b>💡 Insight:</b> ${card.insight}</div>`;
+    }
+
+    html += `<div class="actions">
+      <button type="button" class="action-btn" data-action="alert">🔔 Set Alert</button>
+      <button type="button" class="action-btn" data-action="transport">📞 Contact / Act</button>
+      ${trendSeries ? `<button type="button" class="action-btn" data-action="trend">📈 7-Day Trend</button>` : ''}
+    </div>`;
+
+    if (trendSeries) html += `<div class="sparkline-wrap">${sparklineSvg(trendSeries)}</div>`;
+    html += `<span class="ts" style="display:block;">${nowTime()}</span>`;
+
+    div.innerHTML = html;
+    div.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        if (action === 'alert') showToast('Alerts are coming soon.');
+        else if (action === 'transport') showToast('This action is coming soon.');
+        else if (action === 'trend') div.querySelector('.sparkline-wrap').classList.toggle('open');
+      });
+    });
+    chat.appendChild(div);
+  }
+
+  function addToolNote(toolCalls) {
+    if (!toolCalls || toolCalls.length === 0) return;
+    const div = document.createElement('div');
+    div.className = 'tools';
+    const names = toolCalls.map(t => (t.input && t.input.params && t.input.params.engine) || 'search').join(', ');
+    div.textContent = 'Checked: ' + names;
+    chat.appendChild(div);
+  }
+
+  function setFollowups(list) {
+    followupsEl.innerHTML = '';
+    if (!list || list.length === 0) { followupsEl.style.display = 'none'; return; }
+    followupsEl.style.display = 'flex';
+    list.forEach(q => {
+      const chip = document.createElement('div');
+      chip.className = 'followup-chip';
+      chip.textContent = q;
+      chip.addEventListener('click', () => sendMessage(q));
+      followupsEl.appendChild(chip);
+    });
+  }
+
+  function renderMessageFromHistory(m) {
+    if (m.role === 'user') {
+      addUserBubble(m.content);
+    } else {
+      const d = m.content; // display shape: { answer, card, followUps, trendSeries, toolCalls }
+      if (d.card && (d.card.topic || (d.card.results && d.card.results.length))) {
+        addResultCard(d.card, d.answer, d.followUps, d.trendSeries);
+      } else {
+        addPlainBubble(d.answer);
+      }
+    }
+  }
+
+  async function loadHistory() {
+    const agent = agentsById[currentAgentId];
+    try {
+      const res = await fetch('/api/history?agentId=' + encodeURIComponent(currentAgentId));
+      const data = await res.json();
+      if (res.ok && data.messages.length > 0) {
+        data.messages.forEach(renderMessageFromHistory);
+        setFollowups(agent.sampleQuestions);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'bubble assistant-intro';
+        div.innerHTML = `<div class="who">${agent.name} <span class="verified">✓ Verified</span></div>${agent.greeting}<span class="ts">${nowTime()}</span>`;
+        chat.appendChild(div);
+        setFollowups(agent.sampleQuestions);
+      }
+      chat.scrollTop = chat.scrollHeight;
+    } catch {
+      addPlainBubble('Could not load chat history. Is the server running?');
+    }
+  }
+
+  async function sendMessage(text) {
+    if (!text.trim()) return;
+    addUserBubble(text);
+    input.value = '';
+    sendBtn.disabled = true;
+    setFollowups([]);
+    chat.scrollTop = chat.scrollHeight;
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = 'Checking live data...';
+    chat.appendChild(loadingDiv);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, agentId: currentAgentId }),
+      });
+      const data = await res.json();
+      loadingDiv.remove();
+
+      if (!res.ok) {
+        addPlainBubble('Error: ' + (data.error || 'Something went wrong.'));
+      } else {
+        addToolNote(data.toolCalls);
+        if (data.card && (data.card.topic || (data.card.results && data.card.results.length))) {
+          addResultCard(data.card, data.answer, data.followUps, data.trendSeries);
+        } else {
+          addPlainBubble(data.answer);
+        }
+        setFollowups(data.followUps && data.followUps.length ? data.followUps : agentsById[currentAgentId].sampleQuestions);
+      }
+      chat.scrollTop = chat.scrollHeight;
+    } catch (err) {
+      loadingDiv.remove();
+      addPlainBubble('Network error. Is the server running?');
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(input.value); });
+
+  // Voice input via the browser's built-in Speech Recognition API — optional,
+  // falls back to a toast if unsupported.
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRec) {
+    const recognition = new SpeechRec();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    let listening = false;
+    micBtn.addEventListener('click', () => {
+      if (listening) return;
+      listening = true;
+      micBtn.classList.add('recording');
+      recognition.start();
+    });
+    recognition.addEventListener('result', (e) => { input.value = e.results[0][0].transcript; });
+    recognition.addEventListener('end', () => { listening = false; micBtn.classList.remove('recording'); });
+    recognition.addEventListener('error', () => {
+      listening = false;
+      micBtn.classList.remove('recording');
+      showToast('Could not hear that — try typing instead.');
+    });
+  } else {
+    micBtn.addEventListener('click', () => showToast('Voice input is not supported in this browser.'));
+  }
+
+  // ---------- Boot sequence ----------
+  async function boot() {
+    const agentsRes = await fetch('/api/agents');
+    const agentsData = await agentsRes.json();
+    agentOrder = agentsData.agents.map(a => a.id);
+    agentsById = Object.fromEntries(agentsData.agents.map(a => [a.id, a]));
+
+    document.getElementById('userAvatar').textContent = initials(currentUser.name);
+    document.getElementById('userName').textContent = currentUser.name;
+
+    authScreen.style.display = 'none';
+    appEl.style.display = 'block';
+
+    await switchAgent(agentOrder[0]);
+  }
+
+  (async function init() {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        currentUser = await res.json();
+        await boot();
+        return;
+      }
+    } catch {}
+    authScreen.style.display = 'flex';
+    appEl.style.display = 'none';
+  })();
+</script>
+</body>
+</html>
