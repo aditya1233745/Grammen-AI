@@ -104,6 +104,11 @@ flowchart TD
     F -->|JSON response| U
 ```
 
+
+https://github.com/user-attachments/assets/b30070fe-9f10-4722-ace9-4003872a1814
+
+
+
 Each `/api/chat` request: the function checks the session cookie, loads that
 user's history for the chosen agent from Postgres, sends it to Claude with
 the agent's own system prompt and the SerpApi MCP server attached as a tool
