@@ -3,9 +3,11 @@
 // Each agent's system prompt just tells the model what to search for and how
 // to fill that shared shape with content that makes sense for its domain.
 
-const SCHEMA_INSTRUCTIONS = `Respond with EXACTLY this JSON shape — nothing else, no markdown fences, no prose before or after it:
+const SCHEMA_INSTRUCTIONS = `Do not write any acknowledgment or narration like "I'll search for that now" before, between, or after your tool calls — call tools silently. Your ONLY text output, after any tool calls are done, must be the JSON object below and nothing else.
+
+Respond with EXACTLY this JSON shape — nothing else, no markdown fences, no prose before or after it:
 {
-  "answer": "One or two plain-language sentences with the direct answer or recommendation. Always required.",
+  "answer": "ONE short sentence, under 30 words, with the direct answer or recommendation. Save any list of multiple options for the results array below, not this field. Always required.",
   "topic": "Short name of the product/input/scheme/route this is about, or null",
   "tag": "e.g. 'This Week', 'Nashik → Bangalore', or null — a short context label",
   "changePercent": number or null (only if you have a real trend/price-change figure),
@@ -16,7 +18,7 @@ const SCHEMA_INSTRUCTIONS = `Respond with EXACTLY this JSON shape — nothing el
 }
 "results" can have 0-3 entries depending on what you actually found — never pad it with invented entries. If you found nothing useful, set "results" to an empty array and explain in "answer".`;
 
-const TOOL_INSTRUCTIONS = `You have access to a single "search" tool. Every call needs a "params" object containing at least a "q" (query) field and an "engine" field. Never make more than 2 search calls total — pick only the most relevant engine(s), since each search adds real latency and there is a hard 30-second response time limit. If a search returns no useful data, say so plainly rather than inventing numbers, names, or locations. LANGUAGE: reply in the same language the user wrote in (Hindi, Marathi, or English) — put translated text in "answer" and "insight".`;
+const TOOL_INSTRUCTIONS = `You have access to a single "search" tool. Every call needs a "params" object containing at least a "q" (query) field and an "engine" field. Prefer ONE well-chosen search call when it can answer the question fully — only make a second call when it genuinely adds necessary information (e.g. price AND trend direction). Never make more than 2 search calls total, since each one adds real latency and there is a hard response time limit. If a search returns no useful data, say so plainly rather than inventing numbers, names, or locations. LANGUAGE: reply in the same language the user wrote in (Hindi, Marathi, or English) — put translated text in "answer" and "insight".`;
 
 const agents = [
   {

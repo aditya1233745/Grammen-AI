@@ -10,6 +10,7 @@ live SerpApi searches via the SerpApi MCP server.
 - [Screenshots](#screenshots)
 - [The 12 agents](#the-12-agents)
 - [Architecture](#architecture)
+- [Advanced features](#advanced-features)
 - [Setup](#setup)
 - [Project structure](#project-structure)
 - [Adding another agent](#adding-another-agent)
@@ -126,6 +127,27 @@ result card in the frontend (`addResultCard` in `public/app.html`) renders
 all 12 agents' answers, instead of building 12 separate card layouts under
 hackathon time pressure.
 
+### Performance: caching and bounded history
+
+Two things keep responses fast as conversations grow, both in
+`netlify/functions/api.mts`:
+
+- **Prompt caching** on the system prompt (`cache_control: { type: "ephemeral" }`) — each agent's system prompt is long and identical on every call, so Anthropic skips reprocessing it on repeat requests within a ~5-minute window. This is the single biggest lever available for cutting latency without changing behavior.
+- **Bounded conversation history** (`MAX_HISTORY_MESSAGES = 30`) — instead of sending a user's *entire* message history to Claude on every turn (which gets slower as a conversation grows, and directly increases the risk of hitting the local-dev 30-second timeout), only the most recent messages are loaded and sent. Nothing is ever deleted from Postgres — this only limits what's loaded per request. The same cap applies to what's shown in the UI, so what a user sees always matches what the agent actually remembers.
+
+Conversation history also isn't purely additive — the chat header's "⋮"
+menu has a **Clear conversation** option (`DELETE /api/history`) that wipes
+a user's history for one specific agent, useful for demos and for resetting
+a conversation that's gone off track.
+
+Each agent still has exactly **one** continuous conversation (not multiple
+ChatGPT-style threads — that was a deliberate scope decision, see the
+`conversation_labels` migration comment for why), but it can be **renamed**:
+click the ✏️ next to the chat header title to give that ongoing conversation
+a custom label (e.g. "iPhone price research" instead of just "Mandi Mitra
+AI"), which then shows in both the header and the sidebar preview. Backed by
+`PUT /api/label` and the `conversation_labels` table.
+
 ## Setup
 
 **Requirements:** Node.js 18+, a Netlify account, and the Netlify CLI
@@ -144,10 +166,13 @@ hackathon time pressure.
    ```
 
 3. Create a free Postgres database at [neon.tech](https://neon.tech) (no card
-   required for the free tier). In Neon's SQL Editor, run the contents of
-   `netlify/database/migrations/20260919120000_init/migration.sql` once to
-   create the `users` and `messages` tables — Netlify's automatic migration
-   runner only applies to its own paid-tier database, not an external one.
+   required for the free tier). In Neon's SQL Editor, run these three files
+   once, in order, to create the schema — Netlify's automatic migration
+   runner only applies to its own paid-tier database, not an external one:
+   - `netlify/database/migrations/20260919120000_init/migration.sql` (users, messages)
+   - `netlify/database/migrations/20260924000000_add_conversation_labels/migration.sql` (conversation labels)
+   - `netlify/database/migrations/20260925000000_add_feedback_and_rate_limits/migration.sql` (feedback, rate limiting)
+
    Copy your project's Postgres connection string from Neon's dashboard.
 
 4. Create a `.env` file in the project root with the following (fill in your
@@ -188,8 +213,13 @@ grameen-ai/
 │   │   └── api.mts                      # The one backend function — all /api/* routes
 │   └── database/
 │       └── migrations/
-│           └── 20260919120000_init/
-│               └── migration.sql        # users + messages tables — run manually against Neon (see Setup)
+│           ├── 20260919120000_init/
+│           │   └── migration.sql        # users + messages tables
+│           ├── 20260924000000_add_conversation_labels/
+│           │   └── migration.sql        # conversation_labels table
+│           └── 20260925000000_add_feedback_and_rate_limits/
+│               └── migration.sql        # message_feedback, rate_limit_log tables
+│           (all three run manually against Neon — see Setup)
 ├── agents.mjs                           # All 12 agents' config + system prompts + shared JSON schema
 ├── public/
 │   ├── index.html                       # Marketing landing page
@@ -212,6 +242,62 @@ why this project uses a free [Neon](https://neon.tech) Postgres database
 directly instead (see Setup, step 3). Netlify's site hosting and Functions
 stay within their free tier for hackathon-scale traffic. The only real,
 unavoidable cost is Anthropic API usage for the chat calls themselves.
+
+## Advanced features
+
+### "Streaming" responses — an important honesty note
+
+Responses appear to type themselves out, word by word, similar to ChatGPT.
+**This is a client-side animation of a complete response, not real
+token-by-token API streaming.** True streaming isn't compatible with this
+project's architecture: each agent's reply is a structured JSON object
+(`{ answer, card, results, ... }`), and Claude's tool calls to the SerpApi
+MCP server resolve server-side inside one request — there's no safe way to
+show a user a "partial" JSON object mid-generation without either exposing
+raw tool-call noise or risking displaying invalid, half-formed data. Instead,
+`typewriterReveal()` in `public/app.html` reveals the already-complete answer
+text progressively once the full response has arrived. It's the same visual
+effect, achieved differently — worth being upfront about if a judge asks.
+
+### Rate limiting
+
+Netlify Functions are stateless between invocations, so an in-memory
+request counter wouldn't work reliably — `checkRateLimit()` in `api.mts`
+uses a small Postgres table (`rate_limit_log`) as a shared, persistent
+counter instead, cleaning up old entries automatically as it goes. Applied
+to three routes: signup (5/hour per IP, prevents spam account creation),
+login (10/5min per IP, prevents brute-force password guessing), and chat
+(20/5min per user, protects your Anthropic API budget from runaway usage).
+A blocked request gets a `429` status and a friendly toast, not a hard error.
+
+### Thumbs up/down feedback
+
+Each agent response has 👍/👎 buttons, backed by `PUT /api/feedback` and a
+`message_feedback` table (one rating per message, upsertable — clicking an
+already-active button clears it). Feedback state persists and correctly
+re-displays when a conversation is reloaded from history, not just for the
+message that was live when you rated it.
+
+### Multi-language UI chrome
+
+A language switcher (English / हिंदी / मराठी) appears on both the login
+screen and inside the app, translating the app's own interface — buttons,
+labels, placeholders, the disclaimer text. This is **separate from and in
+addition to** the agents' own multilingual replies (each agent already
+replies in whatever language the user writes in, via its system prompt) —
+this feature translates the *chrome around* the conversation, not the
+conversation content itself. Scope note: the 12 agents' own names, taglines,
+and sample questions are intentionally left untranslated — translating
+36+ pieces of curated per-agent content across 3 languages was treated as
+a separate, larger content task, not part of this pass. Preference is saved
+in `localStorage`, so it persists across sessions on the same device.
+
+### Text-to-speech
+
+A 🔊 button next to each response reads the answer aloud using the
+browser's built-in `SpeechSynthesis` API — no external dependency, same
+approach as the existing voice-input mic button. The voice's language
+follows whichever UI language is currently selected.
 
 ## Known limitations (be upfront about these with judges)
 

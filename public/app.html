@@ -199,6 +199,29 @@
   .result-card .ts { text-align: right; }
 
   .tools { align-self: flex-start; font-size: 10px; color: #999; padding: 0 4px; }
+  .feedback-bar { display: flex; gap: 6px; margin-top: 6px; }
+  .fb-btn {
+    font-size: 13px; cursor: pointer; opacity: 0.55; padding: 2px 5px;
+    border-radius: 6px; transition: opacity 0.15s, background 0.15s;
+  }
+  .fb-btn:hover { opacity: 1; background: rgba(0,0,0,0.05); }
+  .fb-btn.active { opacity: 1; background: rgba(37,211,102,0.15); }
+  .date-separator {
+    align-self: center; background: rgba(255,255,255,0.75); color: var(--wa-text-secondary);
+    font-size: 11.5px; font-weight: 600; padding: 5px 14px; border-radius: 12px;
+    margin: 6px 0; box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+  }
+  .loading-dots { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 2px; }
+  .loading-dots span {
+    width: 5px; height: 5px; border-radius: 50%; background: #999;
+    animation: loadingDotPulse 1.2s infinite ease-in-out;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes loadingDotPulse {
+    0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
+    30% { opacity: 1; transform: scale(1); }
+  }
   .followups { display: flex; gap: 8px; overflow-x: auto; padding: 6px 40px 2px; background: var(--wa-bg); }
   .followup-chip { flex-shrink: 0; background: white; border: 1px solid var(--wa-border); border-radius: 16px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; color: var(--wa-header); }
   .followup-chip:hover { background: var(--wa-hover); }
@@ -226,16 +249,23 @@
 
 <div id="authScreen">
   <div class="auth-card">
+    <div style="text-align:right; margin-bottom:8px;">
+      <select id="langSwitchAuth" style="font-size:12px; border:1px solid var(--wa-border); border-radius:6px; padding:3px 6px; background:white;">
+        <option value="en">English</option>
+        <option value="hi">हिंदी</option>
+        <option value="mr">मराठी</option>
+      </select>
+    </div>
     <h1>🌾 Grameen AI</h1>
     <p class="sub" id="authSub">Log in to your account</p>
     <form id="authForm">
       <div id="nameField" style="display:none;">
-        <label>Name</label>
+        <label id="nameLabelText">Name</label>
         <input id="authName" type="text" placeholder="Ramesh Patel" />
       </div>
-      <label>Email</label>
+      <label id="emailLabelText">Email</label>
       <input id="authEmail" type="email" placeholder="you@example.com" required />
-      <label>Password</label>
+      <label id="passwordLabelText">Password</label>
       <input id="authPassword" type="password" placeholder="••••••••" required />
       <button type="submit" class="submit" id="authSubmit">Log in</button>
       <div class="auth-error" id="authError"></div>
@@ -247,7 +277,14 @@
 <div id="app">
   <div class="app-inner">
     <div class="sidebar">
-      <div class="sidebar-brand"><span class="logo">🌾</span><span class="brand-name">Grameen AI</span></div>
+      <div class="sidebar-brand">
+        <span class="logo">🌾</span><span class="brand-name">Grameen AI</span>
+        <select id="langSwitchApp" style="margin-left:auto; font-size:11px; border:none; border-radius:6px; padding:2px 4px; background:rgba(255,255,255,0.2); color:white;">
+          <option value="en">EN</option>
+          <option value="hi">हिं</option>
+          <option value="mr">मर</option>
+        </select>
+      </div>
       <div class="sidebar-header">
         <div class="who">
           <div class="avatar ramesh" id="userAvatar">?</div>
@@ -258,24 +295,33 @@
           <div class="menu-dropdown" id="menuDropdown"><div id="logoutBtn">Logout</div></div>
         </div>
       </div>
-      <div class="search-box"><input placeholder="Search or start new chat" /></div>
+      <div class="search-box"><input id="sidebarSearch" placeholder="Search or start new chat" /></div>
       <div class="chat-list" id="chatList"></div>
     </div>
 
     <div class="main">
       <div class="chat-header">
         <div class="avatar" id="headerAvatar">🌾</div>
-        <div>
-          <div class="title" id="headerTitle">Grameen AI</div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <div class="title" id="headerTitle">Grameen AI</div>
+            <span id="editLabelBtn" title="Rename this conversation" style="cursor:pointer; font-size:13px; opacity:0.75;">✏️</span>
+          </div>
           <div class="status" id="headerStatus">● Online</div>
         </div>
-        <div class="icons"><span>🔍</span><span>⚙️</span><span>⋮</span></div>
+        <div class="icons">
+          <span>🔍</span><span>⚙️</span>
+          <div style="position:relative;">
+            <span id="chatMenuBtn" style="cursor:pointer;">⋮</span>
+            <div class="menu-dropdown" id="chatMenuDropdown"><div id="clearHistoryBtn">Clear conversation</div></div>
+          </div>
+        </div>
       </div>
 
       <div class="messages" id="chat"></div>
 
       <div class="followups" id="followups" style="display:none;"></div>
-      <div class="disclaimer">🔒 Prices and info fetched live via SerpApi search engines — built for the SerpApi India Hackathon 2026, not a government data feed.</div>
+      <div class="disclaimer" id="disclaimerText">🔒 Prices and info fetched live via SerpApi search engines — built for the SerpApi India Hackathon 2026, not a government data feed.</div>
 
       <form class="input-bar" id="form">
         <span class="icon-btn">😊</span>
@@ -290,11 +336,100 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ---------- Language / UI translations ----------
+  // Covers the app's static chrome (buttons, labels, placeholders) — NOT
+  // agent replies, which are already multilingual via the model itself
+  // (each agent's system prompt replies in whatever language the user
+  // writes in), and NOT the 12 agents' own names/taglines/sample questions,
+  // which stay as originally authored. This is intentionally scoped to just
+  // the app shell, per the actual ask.
+  const TRANSLATIONS = {
+    en: {
+      authSubLogin: 'Log in to your account', authSubSignup: 'Create your account',
+      nameLabel: 'Name', emailLabel: 'Email', passwordLabel: 'Password',
+      loginBtn: 'Log in', signupBtn: 'Sign up',
+      switchToSignup: "New here? <a id='authToggle2'>Create an account</a>",
+      switchToLogin: "Already have an account? <a id='authToggle2'>Log in</a>",
+      searchPlaceholder: 'Search or start new chat', inputPlaceholder: 'Type your question...',
+      clearConversation: 'Clear conversation', logout: 'Logout',
+      renameTooltip: 'Rename this conversation',
+      disclaimer: '🔒 Prices and info fetched live via SerpApi search engines — built for the SerpApi India Hackathon 2026, not a government data feed.',
+    },
+    hi: {
+      authSubLogin: 'अपने खाते में लॉग इन करें', authSubSignup: 'अपना खाता बनाएं',
+      nameLabel: 'नाम', emailLabel: 'ईमेल', passwordLabel: 'पासवर्ड',
+      loginBtn: 'लॉग इन करें', signupBtn: 'साइन अप करें',
+      switchToSignup: "नए हैं? <a id='authToggle2'>खाता बनाएं</a>",
+      switchToLogin: "पहले से खाता है? <a id='authToggle2'>लॉग इन करें</a>",
+      searchPlaceholder: 'खोजें या नई बातचीत शुरू करें', inputPlaceholder: 'अपना सवाल लिखें...',
+      clearConversation: 'बातचीत साफ़ करें', logout: 'लॉग आउट',
+      renameTooltip: 'इस बातचीत का नाम बदलें',
+      disclaimer: '🔒 कीमतें और जानकारी SerpApi सर्च इंजन से लाइव ली जाती है — SerpApi इंडिया हैकाथॉन 2026 के लिए बनाया गया, यह सरकारी डेटा फीड नहीं है।',
+    },
+    mr: {
+      authSubLogin: 'तुमच्या खात्यात लॉग इन करा', authSubSignup: 'तुमचे खाते तयार करा',
+      nameLabel: 'नाव', emailLabel: 'ईमेल', passwordLabel: 'पासवर्ड',
+      loginBtn: 'लॉग इन करा', signupBtn: 'साइन अप करा',
+      switchToSignup: "नवीन आहात? <a id='authToggle2'>खाते तयार करा</a>",
+      switchToLogin: "आधीच खाते आहे? <a id='authToggle2'>लॉग इन करा</a>",
+      searchPlaceholder: 'शोधा किंवा नवीन संभाषण सुरू करा', inputPlaceholder: 'तुमचा प्रश्न टाइप करा...',
+      clearConversation: 'संभाषण साफ करा', logout: 'लॉग आउट',
+      renameTooltip: 'या संभाषणाचे नाव बदला',
+      disclaimer: '🔒 किमती आणि माहिती SerpApi सर्च इंजिनद्वारे थेट मिळवली जाते — SerpApi इंडिया हॅकेथॉन 2026 साठी तयार केले, ही सरकारी डेटा फीड नाही.',
+    },
+  };
+
+  let currentLang = localStorage.getItem('grameenLang') || 'en';
+
+  function t(key) {
+    return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+  }
+
+  function applyTranslations() {
+    // Auth screen
+    const isSignup = document.getElementById('nameField').style.display !== 'none';
+    document.getElementById('authSub').textContent = isSignup ? t('authSubSignup') : t('authSubLogin');
+    document.getElementById('nameLabelText').textContent = t('nameLabel');
+    document.getElementById('emailLabelText').textContent = t('emailLabel');
+    document.getElementById('passwordLabelText').textContent = t('passwordLabel');
+    document.getElementById('authSubmit').textContent = isSignup ? t('signupBtn') : t('loginBtn');
+    const switchEl = document.getElementById('authSwitch');
+    switchEl.innerHTML = isSignup ? t('switchToLogin') : t('switchToSignup');
+    const toggle2 = document.getElementById('authToggle2');
+    if (toggle2) toggle2.addEventListener('click', () => document.getElementById('authToggle').click());
+
+    // App shell (only present once logged in, so guard each lookup)
+    const searchEl = document.getElementById('sidebarSearch');
+    if (searchEl) searchEl.placeholder = t('searchPlaceholder');
+    if (input) input.placeholder = t('inputPlaceholder');
+    const clearBtn = document.getElementById('clearHistoryBtn');
+    if (clearBtn) clearBtn.textContent = t('clearConversation');
+    const logoutBtnEl = document.getElementById('logoutBtn');
+    if (logoutBtnEl) logoutBtnEl.textContent = t('logout');
+    const editBtn = document.getElementById('editLabelBtn');
+    if (editBtn) editBtn.title = t('renameTooltip');
+    const disclaimerEl = document.getElementById('disclaimerText');
+    if (disclaimerEl) disclaimerEl.textContent = t('disclaimer');
+
+    document.getElementById('langSwitchAuth').value = currentLang;
+    document.getElementById('langSwitchApp').value = currentLang;
+  }
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('grameenLang', lang);
+    applyTranslations();
+  }
+
+  document.getElementById('langSwitchAuth').addEventListener('change', (e) => setLanguage(e.target.value));
+  document.getElementById('langSwitchApp').addEventListener('change', (e) => setLanguage(e.target.value));
+
   // ---------- State ----------
   let currentUser = null;
   let agentsById = {};
   let agentOrder = [];
   let currentAgentId = null;
+  let agentLabels = {}; // agentId -> custom conversation label, null/undefined = use the default agent name
 
   const chat = document.getElementById('chat');
   const form = document.getElementById('form');
@@ -330,19 +465,8 @@
 
   authToggle.addEventListener('click', () => {
     authMode = authMode === 'login' ? 'signup' : 'login';
-    if (authMode === 'signup') {
-      authSub.textContent = 'Create your account';
-      authSubmit.textContent = 'Sign up';
-      nameField.style.display = 'block';
-      authSwitch.innerHTML = 'Already have an account? <a id="authToggle2">Log in</a>';
-      document.getElementById('authToggle2').addEventListener('click', () => authToggle.click());
-    } else {
-      authSub.textContent = 'Log in to your account';
-      authSubmit.textContent = 'Log in';
-      nameField.style.display = 'none';
-      authSwitch.innerHTML = "New here? <a id='authToggle2'>Create an account</a>";
-      document.getElementById('authToggle2').addEventListener('click', () => authToggle.click());
-    }
+    nameField.style.display = authMode === 'signup' ? 'block' : 'none';
+    applyTranslations();
     authError.classList.remove('show');
   });
 
@@ -392,6 +516,69 @@
     authScreen.style.display = 'flex';
   });
 
+  // ---------- Chat header menu: Clear conversation ----------
+  const chatMenuBtn = document.getElementById('chatMenuBtn');
+  const chatMenuDropdown = document.getElementById('chatMenuDropdown');
+  chatMenuBtn.addEventListener('click', () => chatMenuDropdown.classList.toggle('show'));
+  document.addEventListener('click', (e) => {
+    if (!chatMenuBtn.contains(e.target) && !chatMenuDropdown.contains(e.target)) chatMenuDropdown.classList.remove('show');
+  });
+  document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+    chatMenuDropdown.classList.remove('show');
+    const agentName = agentsById[currentAgentId].name;
+    if (!confirm('Clear your entire conversation with ' + agentName + '? This cannot be undone.')) return;
+    try {
+      await fetch('/api/history?agentId=' + encodeURIComponent(currentAgentId), { method: 'DELETE' });
+      chat.innerHTML = '';
+      lastRenderedDay = null;
+      await loadHistory();
+      showToast('Conversation cleared.');
+    } catch {
+      showToast('Could not clear conversation. Is the server running?');
+    }
+  });
+
+  // ---------- Rename conversation (custom label per agent) ----------
+  document.getElementById('editLabelBtn').addEventListener('click', () => {
+    const titleEl = document.getElementById('headerTitle');
+    const agent = agentsById[currentAgentId];
+    const currentValue = agentLabels[currentAgentId] || '';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentValue;
+    input.placeholder = agent.name;
+    input.maxLength = 60;
+    input.style.cssText = 'font-family:inherit; font-size:15px; font-weight:600; border:none; border-bottom:1px solid rgba(255,255,255,0.6); background:transparent; color:inherit; outline:none; width:180px; padding:1px 2px;';
+    titleEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    async function save() {
+      const newLabel = input.value.trim();
+      try {
+        const res = await fetch('/api/label', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentId: currentAgentId, label: newLabel }),
+        });
+        const data = await res.json();
+        agentLabels[currentAgentId] = data.label || null;
+      } catch {
+        showToast('Could not save the new name. Is the server running?');
+      }
+      input.replaceWith(titleEl);
+      updateHeader();
+      renderSidebar();
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { input.value = currentValue; input.blur(); }
+    });
+    input.addEventListener('blur', save, { once: true });
+  });
+
   function renderSidebar() {
     const listEl = document.getElementById('chatList');
     listEl.innerHTML = '';
@@ -403,7 +590,7 @@
         <div class="avatar" style="background:${agent.color};">${agent.icon}</div>
         <div class="meta">
           <div class="row1"><span class="name">${agent.name}</span></div>
-          <div class="preview">${agent.tagline}</div>
+          <div class="preview">${agentLabels[id] || agent.tagline}</div>
         </div>`;
       item.addEventListener('click', () => switchAgent(id));
       listEl.appendChild(item);
@@ -414,8 +601,11 @@
     const agent = agentsById[currentAgentId];
     document.getElementById('headerAvatar').textContent = agent.icon;
     document.getElementById('headerAvatar').style.background = 'white';
-    document.getElementById('headerTitle').textContent = agent.name;
-    document.getElementById('headerStatus').textContent = '● Online — ' + agent.tagline;
+    const label = agentLabels[currentAgentId];
+    document.getElementById('headerTitle').textContent = label || agent.name;
+    document.getElementById('headerStatus').textContent = label
+      ? '● Online — ' + agent.name
+      : '● Online — ' + agent.tagline;
   }
 
   async function switchAgent(id) {
@@ -423,6 +613,7 @@
     renderSidebar();
     updateHeader();
     chat.innerHTML = '';
+    lastRenderedDay = null; // each agent's history is its own sequence, start fresh
     await loadHistory();
   }
 
@@ -438,15 +629,88 @@
     chat.appendChild(div);
   }
 
-  function addPlainBubble(text) {
+  function speakText(text) {
+    if (!window.speechSynthesis) { showToast('Voice playback is not supported in this browser.'); return; }
+    window.speechSynthesis.cancel(); // stop any currently playing speech first
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langMap = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' };
+    utterance.lang = langMap[currentLang] || 'en-IN';
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function buildFeedbackBarHtml(messageId, feedback) {
+    if (!messageId) return ''; // no id yet (shouldn't normally happen) — skip feedback controls
+    return `<div class="feedback-bar" data-message-id="${messageId}">
+      <span class="fb-btn ${feedback === 'up' ? 'active' : ''}" data-rating="up">👍</span>
+      <span class="fb-btn ${feedback === 'down' ? 'active' : ''}" data-rating="down">👎</span>
+      <span class="fb-btn" data-action="speak">🔊</span>
+    </div>`;
+  }
+
+  function wireFeedbackBar(container, answerText) {
+    const bar = container.querySelector('.feedback-bar');
+    if (!bar) return;
+    const messageId = bar.dataset.messageId;
+    bar.querySelectorAll('.fb-btn[data-rating]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const rating = btn.dataset.rating;
+        const clearing = btn.classList.contains('active');
+        const newRating = clearing ? null : rating;
+        bar.querySelectorAll('.fb-btn[data-rating]').forEach(b => b.classList.remove('active'));
+        if (newRating) btn.classList.add('active');
+        try {
+          await fetch('/api/feedback', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId: Number(messageId), rating: newRating }),
+          });
+        } catch {
+          showToast('Could not save feedback. Is the server running?');
+        }
+      });
+    });
+    const speakBtn = bar.querySelector('[data-action="speak"]');
+    if (speakBtn) speakBtn.addEventListener('click', () => speakText(answerText));
+  }
+
+  // Reveals text progressively rather than all at once — a client-side
+  // animation for the "streaming" feel, NOT real token-by-token API
+  // streaming (which isn't compatible with our structured-JSON response
+  // format — see the README for why). Only used for brand-new live
+  // responses, never for history replay. Chunk size scales with text
+  // length so long answers don't take forever to finish revealing.
+  function typewriterReveal(el, text) {
+    el.textContent = '';
+    let i = 0;
+    const chunk = Math.max(1, Math.ceil(text.length / 120));
+    (function step() {
+      i += chunk;
+      el.textContent = text.slice(0, i);
+      chat.scrollTop = chat.scrollHeight;
+      if (i < text.length) setTimeout(step, 14);
+    })();
+  }
+
+  function addPlainBubble(text, options = {}) {
+    const { messageId, feedback, animate } = options;
     const div = document.createElement('div');
     div.className = 'bubble plain';
-    div.textContent = text;
+
+    const textSpan = document.createElement('span');
+    div.appendChild(textSpan);
+
+    const metaWrap = document.createElement('div');
+    metaWrap.innerHTML = buildFeedbackBarHtml(messageId, feedback);
+    while (metaWrap.firstChild) div.appendChild(metaWrap.firstChild);
+
     const ts = document.createElement('span');
     ts.className = 'ts';
     ts.textContent = nowTime();
     div.appendChild(ts);
+
     chat.appendChild(div);
+    wireFeedbackBar(div, text);
+    if (animate) typewriterReveal(textSpan, text); else textSpan.textContent = text;
   }
 
   function sparklineSvg(series) {
@@ -472,7 +736,8 @@
   // ONE generic card renderer, reused by all 4 agents — each agent's system
   // prompt fills the same {topic, tag, results, insight} shape with
   // domain-appropriate content (see agents.js on the server).
-  function addResultCard(card, answer, followUps, trendSeries) {
+  function addResultCard(card, answer, followUps, trendSeries, options = {}) {
+    const { messageId, feedback, animate } = options;
     const agent = agentsById[currentAgentId];
     const div = document.createElement('div');
     div.className = 'result-card';
@@ -489,7 +754,7 @@
       </div>`;
     }
 
-    html += `<div class="answer-line">${answer}</div>`;
+    html += `<div class="answer-line"></div>`;
 
     if (card.results && card.results.length > 0) {
       html += '<div class="items">';
@@ -514,6 +779,7 @@
     </div>`;
 
     if (trendSeries) html += `<div class="sparkline-wrap">${sparklineSvg(trendSeries)}</div>`;
+    html += buildFeedbackBarHtml(messageId, feedback);
     html += `<span class="ts" style="display:block;">${nowTime()}</span>`;
 
     div.innerHTML = html;
@@ -526,6 +792,10 @@
       });
     });
     chat.appendChild(div);
+    wireFeedbackBar(div, answer);
+
+    const answerLineEl = div.querySelector('.answer-line');
+    if (animate) typewriterReveal(answerLineEl, answer); else answerLineEl.textContent = answer;
   }
 
   function addToolNote(toolCalls) {
@@ -550,24 +820,69 @@
     });
   }
 
+  function formatDateLabel(dateInput) {
+    const d = new Date(dateInput);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const sameDay = (a, b) => a.toDateString() === b.toDateString();
+    if (sameDay(d, today)) return 'Today';
+    if (sameDay(d, yesterday)) return 'Yesterday';
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined });
+  }
+
+  function addDateSeparator(label) {
+    const div = document.createElement('div');
+    div.className = 'date-separator';
+    div.textContent = label;
+    chat.appendChild(div);
+  }
+
+  let lastRenderedDay = null; // tracks the day of the last message rendered, to know when to insert a new separator
+
   function renderMessageFromHistory(m) {
+    if (m.createdAt) {
+      const label = formatDateLabel(m.createdAt);
+      if (label !== lastRenderedDay) {
+        addDateSeparator(label);
+        lastRenderedDay = label;
+      }
+    }
     if (m.role === 'user') {
       addUserBubble(m.content);
     } else {
       const d = m.content; // display shape: { answer, card, followUps, trendSeries, toolCalls }
+      const opts = { messageId: m.id, feedback: m.feedback, animate: false };
       if (d.card && (d.card.topic || (d.card.results && d.card.results.length))) {
-        addResultCard(d.card, d.answer, d.followUps, d.trendSeries);
+        addResultCard(d.card, d.answer, d.followUps, d.trendSeries, opts);
       } else {
-        addPlainBubble(d.answer);
+        addPlainBubble(d.answer, opts);
       }
     }
   }
 
   async function loadHistory() {
-    const agent = agentsById[currentAgentId];
+    // Capture which agent this load was actually requested for. If the user
+    // switches to a different agent before this fetch resolves — very easy
+    // to do by clicking through the sidebar quickly — we must not render a
+    // stale response into whatever chat is now on screen. This is the same
+    // category of bug fixed earlier for sendMessage(), just missing here too.
+    const requestAgentId = currentAgentId;
+    const agent = agentsById[requestAgentId];
     try {
-      const res = await fetch('/api/history?agentId=' + encodeURIComponent(currentAgentId));
+      const res = await fetch('/api/history?agentId=' + encodeURIComponent(requestAgentId));
       const data = await res.json();
+
+      // Safe to always store the label under its correct key, and refresh
+      // the sidebar row, regardless of whether the user has since switched —
+      // this doesn't touch the currently-open chat pane at all.
+      agentLabels[requestAgentId] = data.label || null;
+      renderSidebar();
+
+      // But stop here if the user has navigated away — don't touch #chat.
+      if (requestAgentId !== currentAgentId) return;
+
+      updateHeader();
       if (res.ok && data.messages.length > 0) {
         data.messages.forEach(renderMessageFromHistory);
         setFollowups(agent.sampleQuestions);
@@ -580,12 +895,23 @@
       }
       chat.scrollTop = chat.scrollHeight;
     } catch {
-      addPlainBubble('Could not load chat history. Is the server running?');
+      if (requestAgentId === currentAgentId) {
+        addPlainBubble('Could not load chat history. Is the server running?');
+      }
     }
   }
 
   async function sendMessage(text) {
     if (!text.trim()) return;
+    // Capture which agent this message was actually sent to. If the user
+    // switches agents before the response comes back, we must not render
+    // it into whatever chat happens to be open at that point — that was
+    // the bug: a slow response from Agent A landing visually inside Agent
+    // B's conversation just because that's what was on screen when it
+    // finally resolved. The message itself still saves correctly server-side
+    // either way, since the request body always carries the right agentId.
+    const requestAgentId = currentAgentId;
+
     addUserBubble(text);
     input.value = '';
     sendBtn.disabled = true;
@@ -594,7 +920,7 @@
 
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'loading';
-    loadingDiv.textContent = 'Checking live data...';
+    loadingDiv.innerHTML = 'Checking live data<span class="loading-dots"><span></span><span></span><span></span></span>';
     chat.appendChild(loadingDiv);
     chat.scrollTop = chat.scrollHeight;
 
@@ -602,26 +928,38 @@
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, agentId: currentAgentId }),
+        body: JSON.stringify({ message: text, agentId: requestAgentId }),
       });
       const data = await res.json();
       loadingDiv.remove();
 
+      // If the user has since switched to a different agent, stop here —
+      // don't render this response into the wrong chat window. It's already
+      // saved server-side and will show correctly if they switch back.
+      if (requestAgentId !== currentAgentId) return;
+
       if (!res.ok) {
-        addPlainBubble('Error: ' + (data.error || 'Something went wrong.'));
+        if (res.status === 429) {
+          showToast(data.error || "You're sending messages quickly — please wait a moment.");
+        } else {
+          addPlainBubble('Error: ' + (data.error || 'Something went wrong.'));
+        }
       } else {
         addToolNote(data.toolCalls);
+        const opts = { messageId: data.messageId, feedback: null, animate: true };
         if (data.card && (data.card.topic || (data.card.results && data.card.results.length))) {
-          addResultCard(data.card, data.answer, data.followUps, data.trendSeries);
+          addResultCard(data.card, data.answer, data.followUps, data.trendSeries, opts);
         } else {
-          addPlainBubble(data.answer);
+          addPlainBubble(data.answer, opts);
         }
         setFollowups(data.followUps && data.followUps.length ? data.followUps : agentsById[currentAgentId].sampleQuestions);
       }
       chat.scrollTop = chat.scrollHeight;
     } catch (err) {
       loadingDiv.remove();
-      addPlainBubble('Network error. Is the server running?');
+      if (requestAgentId === currentAgentId) {
+        addPlainBubble('Network error. Is the server running?');
+      }
     } finally {
       sendBtn.disabled = false;
       input.focus();
@@ -667,11 +1005,13 @@
 
     authScreen.style.display = 'none';
     appEl.style.display = 'block';
+    applyTranslations();
 
     await switchAgent(agentOrder[0]);
   }
 
   (async function init() {
+    applyTranslations(); // sets the auth screen's language before login, from the saved preference
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
